@@ -27,7 +27,7 @@ public class UsersDao implements AbstractDao<UUID, User> {
 
     @Override
     @Transactional
-    public void partialUpdate(UUID id, User userForUpdate) {
+    public User partialUpdate(UUID id, User userForUpdate) {
         Session session = entityManager.unwrap(Session.class);
         User updatedUser = session.get(User.class, id);
         if (userForUpdate.getEmail() != null) {
@@ -49,6 +49,7 @@ public class UsersDao implements AbstractDao<UUID, User> {
             updatedUser.setPhone(userForUpdate.getPhone());
         }
         session.merge(updatedUser);
+        return updatedUser;
     }
 
     @Override
@@ -56,12 +57,18 @@ public class UsersDao implements AbstractDao<UUID, User> {
     public void allUpdate(UUID id, User userForUpdate) {
         Session session = entityManager.unwrap(Session.class);
         User updatedUser = session.get(User.class, id);
-        updatedUser.setEmail(userForUpdate.getEmail());
-        updatedUser.setAddress(userForUpdate.getAddress());
-        updatedUser.setBirthday(userForUpdate.getBirthday());
-        updatedUser.setLastName(userForUpdate.getLastName());
-        updatedUser.setFirstName(userForUpdate.getFirstName());
-        updatedUser.setPhone(userForUpdate.getPhone());
+        if (userForUpdate.getEmail() != null && userForUpdate.getAddress() != null &&
+                userForUpdate.getBirthday() != null && userForUpdate.getLastName() != null &&
+                userForUpdate.getFirstName() != null && userForUpdate.getPhone() != null) {
+            updatedUser.setEmail(userForUpdate.getEmail());
+            updatedUser.setAddress(userForUpdate.getAddress());
+            updatedUser.setBirthday(userForUpdate.getBirthday());
+            updatedUser.setLastName(userForUpdate.getLastName());
+            updatedUser.setFirstName(userForUpdate.getFirstName());
+            updatedUser.setPhone(userForUpdate.getPhone());
+        } else {
+            throw new RuntimeException("There are not all fields");
+        }
     }
 
     @Override
@@ -69,7 +76,11 @@ public class UsersDao implements AbstractDao<UUID, User> {
     public void delete(UUID id) {
         Session session = entityManager.unwrap(Session.class);
         User userForDelete = session.get(User.class, id);
-        session.remove(userForDelete);
+        if (userForDelete == null) {
+            throw new RuntimeException();
+        } else {
+            session.remove(userForDelete);
+        }
     }
 
     @Override

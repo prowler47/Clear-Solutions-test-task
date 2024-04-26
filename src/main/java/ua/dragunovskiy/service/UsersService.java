@@ -21,17 +21,18 @@ public class UsersService implements AbstractService<UUID, User> {
     }
 
     @Override
-    public void partialUpdate(UUID updatedId, User entityForUpdate) {
-        dao.partialUpdate(updatedId, entityForUpdate);
+    public User partialUpdate(UUID updatedId, User entityForUpdate) {
+       return dao.partialUpdate(updatedId, entityForUpdate);
     }
 
     @Override
-    public void allUpdate(UUID updatedId, User entityForUpdate) {
+    public void allUpdate(UUID updatedId, User entityForUpdate) throws RuntimeException {
+
         dao.allUpdate(updatedId, entityForUpdate);
     }
 
     @Override
-    public void delete(UUID id) {
+    public void delete(UUID id) throws RuntimeException {
         dao.delete(id);
     }
 

@@ -8,7 +8,7 @@ import java.util.List;
 @Component
 public interface AbstractDao<T, E> {
     void create(E entity);
-    void partialUpdate(T updatedId, E entityForUpdate);
+    E partialUpdate(T updatedId, E entityForUpdate);
     void allUpdate(T updatedId, E entityForUpdate);
 
     void delete(T id);
