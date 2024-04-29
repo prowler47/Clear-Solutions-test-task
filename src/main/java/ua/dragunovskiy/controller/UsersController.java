@@ -1,13 +1,14 @@
 package ua.dragunovskiy.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import ua.dragunovskiy.entity.User;
 import ua.dragunovskiy.service.AbstractService;
-import ua.dragunovskiy.service.UsersService;
 
 import java.time.LocalDate;
 import java.time.Period;
@@ -25,51 +26,54 @@ public class UsersController {
     private int permittedAge;
 
     @PostMapping("/users")
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        LocalDate birthDay = user.getBirthday();
+    public User createUser(@Valid @RequestBody User user, BindingResult bindingResult) {
+            LocalDate birthDay = user.getBirthday();
+        if (bindingResult.hasErrors()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, bindingResult.getAllErrors().get(0).getDefaultMessage());
+        }
         if (checkAge(birthDay)) {
             service.create(user);
-            return ResponseEntity.ok(null);
-
+            return user;
         } else {
-            System.out.println("You are not 18 years");
-            return new ResponseEntity<User>(HttpStatus.BAD_REQUEST);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You are not 18 years");
         }
     }
     @PatchMapping("/users/{id}")
-    public ResponseEntity<User> partialUpdateUser(@PathVariable UUID id, @RequestBody User user) {
+    public User partialUpdateUser(@PathVariable UUID id, @RequestBody User user) {
             try {
                 service.partialUpdate(id, user);
-                return ResponseEntity.ok(null);
+                return user;
             } catch (NullPointerException e) {
-                return new ResponseEntity<User>(HttpStatus.NOT_FOUND);
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
             }
     }
 
     @PutMapping("/users/{id}")
-    public ResponseEntity<User> allUpdateUser(@PathVariable UUID id, @RequestBody User user) {
+    public User allUpdateUser(@PathVariable UUID id, @RequestBody User user) {
         try {
             service.allUpdate(id, user);
         } catch (RuntimeException e) {
-            return new ResponseEntity<User>(HttpStatus.BAD_REQUEST);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<User>(HttpStatus.OK);
+        return user;
     }
 
     @DeleteMapping("/users/{id}")
-    public ResponseEntity<User> delete(@PathVariable UUID id) {
+    public void delete(@PathVariable UUID id) {
         try {
             service.delete(id);
         } catch (RuntimeException e) {
-            return new ResponseEntity<User>(HttpStatus.BAD_REQUEST);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No such user found");
         }
-        return new ResponseEntity<User>(HttpStatus.OK);
     }
 
     @GetMapping("/users")
     public List<User> getUsersByBirthday(@RequestParam(name = "from") String from, @RequestParam(name = "to") String to) {
         LocalDate localDateFrom = LocalDate.parse(from);
         LocalDate localDateTo = LocalDate.parse(to);
+        if (service.getUsersByBirthday(localDateFrom, localDateTo).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No such users found");
+        }
         return service.getUsersByBirthday(localDateFrom, localDateTo);
     }
 
